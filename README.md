@@ -56,8 +56,7 @@ são **placeholders** claramente identificáveis, para serem substituídos pelos
 
 ## 🌐 Site publicado
 
-<!-- PLACEHOLDER: link do GitHub Pages — a ser preenchido na tarefa 11.3 após publicar o site -->
-🔗 _Link do GitHub Pages: (a ser adicionado após a publicação)_
+🔗 **Acesse a ferramenta:** <https://sontakan.github.io/pokemon-banner-tool/>
 
 ## 🛠️ Detalhes técnicos
 
