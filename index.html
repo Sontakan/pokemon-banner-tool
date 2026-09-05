@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Banner — Busca de Cartas</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0b1020; color: #e2e8f0; min-height: 100vh; padding-bottom: 60px; }
+
+        header { background: #111a33; padding: 16px 20px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+        .header-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+        header h1 { font-size: 1.2em; color: #fbbf24; }
+        .nav-links a { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); }
+        .nav-links a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .nav-links button { font-size: 13px; }
+
+        .layout { max-width: 1200px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+        .panel { background: #111a33; border: 1px solid #22304f; border-radius: 14px; padding: 16px; }
+        .panel h2 { font-size: 14px; color: #93c5fd; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        label.field { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; margin-top: 10px; }
+        input[type=text], select { width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #334155; background: #0b1020; color: #e2e8f0; font-size: 13px; outline: none; }
+        input[type=text]:focus, select:focus { border-color: #3b82f6; }
+
+        .btn { padding: 9px 14px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+        .btn-primary { background: #3b82f6; color: #fff; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-green { background: #10b981; color: #fff; }
+        .btn-green:hover { background: #059669; }
+        .btn-amber { background: #f59e0b; color: #111; }
+        .btn-amber:hover { background: #d97706; }
+        .btn-ghost { background: transparent; color: #94a3b8; border: 1px solid #334155; }
+        .btn-ghost:hover { border-color: #64748b; color: #e2e8f0; }
+        .btn-sm { padding: 4px 8px; font-size: 11px; }
+        .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+        .search-results { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-height: 380px; overflow-y: auto; }
+        .sr-card { background: #0b1020; border: 1px solid #22304f; border-radius: 8px; padding: 6px; cursor: pointer; text-align: center; transition: all 0.15s; }
+        .sr-card:hover { border-color: #3b82f6; transform: translateY(-2px); }
+        .sr-card img { width: 100%; border-radius: 4px; aspect-ratio: 63/88; object-fit: cover; background: #1e293b; }
+        .sr-card .n { font-size: 9px; color: #cbd5e1; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sr-card .s { font-size: 8px; color: #64748b; }
+
+        .sections-editor { margin-top: 14px; }
+        .sec-item { background: #0b1020; border: 1px solid #22304f; border-radius: 8px; padding: 8px; margin-bottom: 8px; }
+        .sec-item .sec-head { display: flex; gap: 6px; align-items: center; }
+        .sec-item input.sec-name { flex: 1; }
+        .sec-count { font-size: 11px; color: #64748b; }
+
+        .hint { font-size: 11px; color: #64748b; margin-top: 6px; line-height: 1.5; }
+
+        /* ===== BANNER (área exportada) ===== */
+        .banner-wrap { overflow-x: auto; }
+        #banner { width: 1024px; background: #eef2f9; border-radius: 0; position: relative; padding: 0 0 24px; color: #1e293b; }
+        .banner-top { background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #2563eb 100%); padding: 18px 30px; text-align: center; position: relative; overflow: hidden; }
+        .banner-top .brandpill { position: absolute; top: 14px; font-size: 11px; background: rgba(0,0,0,0.35); padding: 4px 10px; border-radius: 20px; font-weight: 700; letter-spacing: 1px; }
+        .banner-top .brandpill.left { left: 20px; } .banner-top .brandpill.right { right: 20px; }
+        .banner-top h1 { font-size: 40px; font-weight: 900; letter-spacing: 2px; line-height: 1; text-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .banner-top h1 .accent { color: #fbbf24; }
+        .banner-top .sub { font-size: 15px; font-weight: 700; margin-top: 6px; color: #cbd5e1; letter-spacing: 1px; }
+
+        .section { margin: 18px 22px 0; border: 2px solid #dbe3f0; border-radius: 14px; padding: 14px 16px 16px; background: #ffffff; box-shadow: 0 2px 10px rgba(30,58,95,0.06); }
+        .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .section-title .num { width: 30px; height: 30px; border-radius: 50%; background: #2563eb; color: #fff; font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+        .section-title .txt { font-size: 20px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; color: #1e293b; }
+
+        .section-cards { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+        .b-card { width: 150px; position: relative; }
+        .b-card img { width: 100%; border-radius: 6px; box-shadow: 0 3px 10px rgba(0,0,0,0.5); aspect-ratio: 63/88; object-fit: cover; background: #1e293b; display: block; }
+        .b-card .vlabel { position: absolute; bottom: 6px; right: 6px; width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+        .v-normal { background: #e5e7eb; color: #374151; }
+        .v-reverse { background: #22d3ee; color: #083344; }
+        .v-foil { background: #fbbf24; color: #111; }
+        .b-card .cname { text-align: center; font-size: 12px; font-weight: 700; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #334155; }
+
+        .banner-footer { display: flex; justify-content: center; gap: 34px; margin: 22px 22px 0; padding-top: 16px; border-top: 1px solid rgba(30,58,95,0.15); font-size: 13px; font-weight: 700; color: #475569; }
+        .banner-footer .fitem { display: flex; align-items: center; gap: 7px; }
+        .banner-footer .ic { width: 22px; height: 22px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+
+        .card-remove { position: absolute; top: 4px; left: 4px; background: rgba(220,38,38,0.9); color: #fff; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 12px; font-weight: 900; line-height: 1; display: none; }
+        .b-card:hover .card-remove { display: block; }
+        .vcycle { position: absolute; bottom: 6px; right: 6px; width: 26px; height: 26px; border: none; cursor: pointer; }
+
+        .empty-sec { text-align: center; color: rgba(255,255,255,0.4); font-size: 12px; padding: 16px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 10px; }
+        .loading { text-align: center; color: #64748b; padding: 30px; grid-column: 1/-1; font-size: 13px; }
+
+        /* ===== MODAL PIX (Donate) ===== */
+        /* Oculto por padrão; task 3.2 vai alternar para display:flex ao abrir. */
+        .pix-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(4,8,20,0.7); backdrop-filter: blur(2px); align-items: center; justify-content: center; padding: 20px; }
+        .pix-overlay.open { display: flex; }
+        .pix-card { background: #111a33; border: 1px solid #22304f; border-radius: 16px; width: 100%; max-width: 420px; padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); position: relative; }
+        .pix-card h2 { font-size: 18px; color: #fbbf24; margin-bottom: 4px; padding-right: 28px; }
+        .pix-close { position: absolute; top: 14px; right: 14px; background: transparent; border: none; color: #94a3b8; font-size: 20px; line-height: 1; cursor: pointer; padding: 2px 6px; border-radius: 6px; }
+        .pix-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+        .pix-card .pix-label { display: block; font-size: 12px; color: #94a3b8; margin: 14px 0 4px; }
+        .pix-payload { width: 100%; min-height: 90px; padding: 10px 12px; border-radius: 8px; border: 1px solid #334155; background: #0b1020; color: #e2e8f0; font-size: 12px; font-family: monospace; resize: vertical; outline: none; word-break: break-all; }
+        .pix-payload:focus { border-color: #3b82f6; }
+        .pix-qr { display: flex; align-items: center; justify-content: center; margin-top: 14px; min-height: 0; }
+        .pix-qr:empty { display: none; }
+        .pix-qr img, .pix-qr canvas { background: #fff; padding: 8px; border-radius: 10px; }
+        .pix-notice { font-size: 11px; color: #64748b; margin-top: 14px; line-height: 1.5; border-top: 1px solid #22304f; padding-top: 12px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-inner">
+            <h1>🎴 Gerador de Banner — Compra ou Troca</h1>
+            <div class="nav-links">
+                <button class="btn btn-amber" id="donate-btn" onclick="openPixModal()">💸 Donate / PIX</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="layout">
+        <!-- ===== PAINEL DE CONTROLE ===== -->
+        <div>
+            <div class="panel">
+                <h2>1. Buscar carta</h2>
+                <label class="field">Buscar por</label>
+                <select id="search-mode">
+                    <option value="name">🃏 Nome da carta / Pokémon</option>
+                    <option value="illustrator">🎨 Ilustrador</option>
+                </select>
+                <label class="field" id="search-label">Nome do Pokémon / carta</label>
+                <input type="text" id="search-input" placeholder="Ex: Charizard, Cinderace..." onkeypress="if(event.key==='Enter')doSearch()">
+                <label class="field">Coleção (filtro)</label>
+                <select id="cfg-set">
+                    <option value="">Todas as coleções</option>
+                </select>
+                <label class="field">Idioma das imagens</label>
+                <select id="cfg-lang">
+                    <option value="pt">🇧🇷 Português</option>
+                    <option value="en">🇺🇸 Inglês</option>
+                    <option value="ja">🇯🇵 Japonês</option>
+                </select>
+                <div class="row">
+                    <button class="btn btn-primary" style="flex:1" onclick="doSearch()">🔍 Buscar</button>
+                </div>
+                <label class="field">Adicionar à seção</label>
+                <select id="target-section"></select>
+                <div class="search-results" id="search-results"></div>
+                <p class="hint">Clique numa carta para adicioná-la à seção selecionada. Depois clique no selo da variante para alternar entre ⚪ Normal / ◇ Reverse / ⭐ Foil.</p>
+            </div>
+
+            <div class="panel" style="margin-top:16px">
+                <h2>2. Textos do banner</h2>
+                <label class="field">Título</label>
+                <input type="text" id="cfg-title" value="PROCURO TODAS REVERSE FOIL" oninput="renderBanner()">
+                <label class="field">Subtítulo</label>
+                <input type="text" id="cfg-sub" value="COMPRA OU TROCA — POR CARTAS REVERSE OU FOIL" oninput="renderBanner()">
+            </div>
+
+            <div class="panel sections-editor" id="sections-panel">
+                <h2>3. Seções / Coleções</h2>
+                <div id="sections-list"></div>
+                <div class="row">
+                    <button class="btn btn-ghost btn-sm" onclick="addSection()">➕ Nova seção</button>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top:16px">
+                <h2>4. Salvar / carregar modelo</h2>
+                <div class="row">
+                    <button class="btn btn-amber" style="flex:1" onclick="copyCode()">📋 Copiar código do modelo</button>
+                </div>
+                <label class="field">Colar código para restaurar</label>
+                <textarea id="code-input" rows="3" placeholder="Cole aqui o código copiado..." style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid #334155;background:#0b1020;color:#e2e8f0;font-size:12px;font-family:monospace;resize:vertical;outline:none;"></textarea>
+                <div class="row">
+                    <button class="btn btn-primary" style="flex:1" onclick="loadCode()">📥 Carregar código</button>
+                    <button class="btn btn-ghost btn-sm" onclick="clearDraft()">🗑️ Zerar</button>
+                </div>
+                <p class="hint">O modelo é salvo automaticamente no navegador. Para backup/uso em outro PC, clique em <strong>Copiar código</strong> e guarde o texto onde quiser. Para restaurar, cole o código e clique em <strong>Carregar código</strong>.</p>
+            </div>
+
+            <div class="panel" style="margin-top:16px">
+                <h2>5. Exportar imagem</h2>
+                <div class="row">
+                    <button class="btn btn-green" style="flex:1" onclick="exportImage()">📸 Baixar imagem PNG</button>
+                </div>
+                <p class="hint">Gera um PNG em alta resolução pronto pra postar. Passe o mouse sobre uma carta no preview pra removê-la (✕).</p>
+            </div>
+        </div>
+
+        <!-- ===== PREVIEW DO BANNER ===== -->
+        <div class="banner-wrap">
+            <div id="banner">
+                <div class="banner-top">
+                    <span class="brandpill left">POKÉMON</span>
+                    <span class="brandpill right">POKÉMON</span>
+                    <h1 id="b-title">PROCURO TODAS <span class="accent">REVERSE FOIL</span></h1>
+                    <div class="sub" id="b-sub">COMPRA OU TROCA</div>
+                </div>
+                <div id="b-sections"></div>
+                <div class="banner-footer">
+                    <div class="fitem"><span class="ic" style="background:#e5e7eb;color:#374151">⚪</span> Normal</div>
+                    <div class="fitem"><span class="ic" style="background:#22d3ee;color:#083344">◇</span> Reverse Foil</div>
+                    <div class="fitem"><span class="ic" style="background:#fbbf24;color:#111">⭐</span> Foil / Holo</div>
+                    <div class="fitem"><span class="ic" style="background:#10b981">🤝</span> Todas as coleções</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL PIX (Donate) — oculto por padrão; abre via openPixModal() (task 3.2) ===== -->
+    <div class="pix-overlay" id="pix-modal">
+        <div class="pix-card" role="dialog" aria-modal="true" aria-labelledby="pix-title">
+            <button class="pix-close" id="pix-close" type="button" aria-label="Fechar">✕</button>
+            <h2 id="pix-title">Apoie o projeto via Pix</h2>
+            <p class="hint">Copie o código abaixo e cole no seu app do banco (Pix Copia e Cola), ou escaneie o QR Code.</p>
+
+            <label class="pix-label" for="pix-payload">Pix Copia e Cola</label>
+            <textarea class="pix-payload" id="pix-payload" rows="4" readonly placeholder="O código Pix aparecerá aqui..."></textarea>
+
+            <div class="row">
+                <button class="btn btn-amber" style="flex:1" id="pix-copy" type="button">📋 Copiar código Pix</button>
+            </div>
+
+            <!-- Contêiner opcional do QR Code — preenchido por renderPixQr() (task 3.2) -->
+            <div class="pix-qr" id="pix-qr"></div>
+
+            <p class="pix-notice">Aviso: a chave Pix, o nome do recebedor e a cidade fazem parte do código e ficam <strong>públicos</strong> no código-fonte deste site.</p>
+        </div>
+    </div>
+
+    <script>
+    var TCGDEX_URL = "https://api.tcgdex.net/v2";
+
+    // ---------- Pix (Donate) — configuração e geração do BR Code ----------
+    // PLACEHOLDERS: substitua pelos dados reais do recebedor.
+    // ATENÇÃO: como este arquivo é público, chave/nome/cidade ficam VISÍVEIS
+    // no código-fonte. Isso é aceitável para uma chave Pix de doação (e-mail).
+    var PIX_CONFIG = {
+        key: "SEU-EMAIL-AQUI@exemplo.com", // PLACEHOLDER — chave Pix (e-mail)
+        merchantName: "NOME RECEBEDOR",     // PLACEHOLDER — até 25 chars
+        merchantCity: "CIDADE",             // PLACEHOLDER — até 15 chars
+        txid: "***"                          // estático (sem transação específica)
+    };
+
+    // Monta um campo TLV do EMV: id (2 chars) + comprimento (2 chars, zero-padded) + valor
+    function emvField(id, value) {
+        value = value == null ? "" : String(value);
+        var len = String(value.length);
+        if (len.length < 2) len = "0" + len; // zero-pad para 2 dígitos
+        return id + len + value;
+    }
+
+    // CRC16-CCITT (poly 0x1021, init 0xFFFF) — retorna 4 hex maiúsculos.
+    // Known-answer: crc16("123456789") === "29B1".
+    function crc16(str) {
+        var crc = 0xFFFF;
+        for (var i = 0; i < str.length; i++) {
+            crc ^= (str.charCodeAt(i) & 0xFF) << 8;
+            for (var j = 0; j < 8; j++) {
+                if (crc & 0x8000) {
+                    crc = (crc << 1) ^ 0x1021;
+                } else {
+                    crc = crc << 1;
+                }
+                crc &= 0xFFFF;
+            }
+        }
+        var hex = crc.toString(16).toUpperCase();
+        while (hex.length < 4) hex = "0" + hex;
+        return hex;
+    }
+
+    // Monta o BR Code estático (Pix Copia e Cola) a partir de uma PixConfig.
+    // Campos TLV na ordem: 00, 26(00/01), 52, 53, 58, 59, 60, 62(05), 63.
+    function buildPixPayload(config) {
+        // Merchant Account Information (26): GUI (00) + chave Pix (01)
+        var mai = emvField("00", "br.gov.bcb.pix") + emvField("01", config.key);
+        // Additional Data Field Template (62): Reference Label / txid (05)
+        var adf = emvField("05", config.txid);
+
+        var payload =
+            emvField("00", "01") +          // Payload Format Indicator
+            emvField("26", mai) +           // Merchant Account Information
+            emvField("52", "0000") +        // Merchant Category Code
+            emvField("53", "986") +         // Transaction Currency (BRL)
+            emvField("58", "BR") +          // Country Code
+            emvField("59", config.merchantName) + // Merchant Name
+            emvField("60", config.merchantCity) + // Merchant City
+            emvField("62", adf);            // Additional Data Field
+
+        // O CRC (63) é calculado sobre todo o conteúdo anterior + "6304".
+        var toCheck = payload + "6304";
+        return payload + "63" + "04" + crc16(toCheck);
+    }
+
+    // Estado: lista de seções, cada uma com nome e cartas
+    var sections = [
+        { name: "Megaevolução", cards: [] },
+        { name: "Escuridão Absoluta", cards: [] },
+        { name: "Caos Ascendente", cards: [] }
+    ];
+    // variante: "normal" | "reverse" | "foil"
+    var VARIANTS = ["normal", "reverse", "foil"];
+    var VARIANT_SYMBOL = { normal: "⚪", reverse: "◇", foil: "⭐" };
+    var VARIANT_CLASS = { normal: "v-normal", reverse: "v-reverse", foil: "v-foil" };
+
+    // ---------- Busca (API TCGdex) ----------
+    // Monta a URL final da imagem: base + qualidade + extensão
+    function imgUrl(base, quality) {
+        if (!base) return "";
+        return base + "/" + (quality || "high") + ".webp";
+    }
+
+    // Mapa set-id -> nome do set (carregado uma vez, no idioma escolhido)
+    var setMap = {};
+    var setList = [];
+    var setMapLang = null;
+    async function loadSetMap(lang) {
+        lang = lang || "en";
+        if (setMapLang === lang) return; // já carregado nesse idioma
+        try {
+            var resp = await fetch(TCGDEX_URL + "/" + lang + "/sets");
+            var data = await resp.json();
+            if (Array.isArray(data)) {
+                setMap = {};
+                data.forEach(function(s) { setMap[s.id] = s.name; });
+                setList = data;
+                setMapLang = lang;
+            }
+        } catch (e) { /* segue sem nomes bonitos */ }
+    }
+
+    // Preenche o dropdown de coleções (mais recentes primeiro)
+    function populateSetDropdown() {
+        var sel = document.getElementById("cfg-set");
+        var prev = sel.value;
+        sel.innerHTML = "<option value=''>Todas as coleções</option>";
+        // a API devolve dos mais antigos aos mais novos; invertemos para os recentes ficarem no topo
+        var list = setList.slice().reverse();
+        list.forEach(function(s) {
+            if (!s.name) return;
+            var o = document.createElement("option");
+            o.value = s.id;
+            o.textContent = s.name + " (" + s.id + ")";
+            sel.appendChild(o);
+        });
+        // mantém a seleção anterior se ainda existir
+        if (prev) sel.value = prev;
+    }
+
+    // Deriva o set-id a partir do id da carta: "swsh4.5-18" -> "swsh4.5"
+    function setIdFromCard(cardId) {
+        if (!cardId) return "";
+        var i = cardId.lastIndexOf("-");
+        return i > 0 ? cardId.substring(0, i) : cardId;
+    }
+
+    // Rótulo amigável: "Shining Fates · 18"
+    function cardLabel(c) {
+        var setId = setIdFromCard(c.id);
+        var setName = setMap[setId] || setId;
+        var num = c.localId || (c.id ? c.id.substring(c.id.lastIndexOf("-") + 1) : "");
+        return setName + (num ? " · " + num : "");
+    }
+
+    async function doSearch() {
+        var q = document.getElementById("search-input").value.trim();
+        var setFilter = document.getElementById("cfg-set").value; // "" = todas
+        // permite buscar só pela coleção mesmo sem digitar nome
+        if (!q && !setFilter) { alert("Digite um nome ou escolha uma coleção."); return; }
+        var mode = document.getElementById("search-mode").value; // name | illustrator
+        var lang = document.getElementById("cfg-lang").value; // pt | en | ja
+        var box = document.getElementById("search-results");
+        box.innerHTML = "<div class='loading'>⏳ Buscando...</div>";
+
+        // garante os nomes de set no idioma escolhido (não re-preenche no fallback en)
+        await loadSetMap(lang);
+        populateSetDropdown();
+
+        var results = await searchLang(q, lang, mode, setFilter);
+        // Se o idioma escolhido não retornou nada, tenta inglês como reserva
+        if (results && results.length === 0 && lang !== "en") {
+            results = await searchLang(q, "en", mode, setFilter);
+        }
+
+        box.innerHTML = "";
+        if (results === null) {
+            box.innerHTML = "<div class='loading'>Erro na busca. Verifique a conexão.</div>";
+            return;
+        }
+        if (results.length === 0) {
+            box.innerHTML = "<div class='loading'>Nenhuma carta encontrada</div>";
+            return;
+        }
+
+        results.forEach(function(c) {
+            var thumb = imgUrl(c.image, "low");
+            var full = imgUrl(c.image, "high");
+            var label = cardLabel(c);
+            var el = document.createElement("div");
+            el.className = "sr-card";
+            el.title = c.name + " — " + label;
+            el.innerHTML = "<img src='" + thumb + "' loading='lazy' onerror=\"this.style.opacity='0.3'\">" +
+                "<div class='n'>" + c.name + "</div>" +
+                "<div class='s'>" + label + "</div>";
+            el.onclick = function() {
+                addCard({
+                    id: c.id,
+                    name: c.name,
+                    image: full || thumb,
+                    set: label,
+                    variant: "reverse"
+                });
+            };
+            box.appendChild(el);
+        });
+    }
+
+    // Busca num idioma específico; retorna array de cartas ou null em caso de erro
+    async function searchLang(q, lang, mode, setFilter) {
+        var params = [];
+        if (q) {
+            var param = (mode === "illustrator") ? "illustrator" : "name";
+            params.push(param + "=" + encodeURIComponent(q));
+        }
+        if (setFilter) params.push("set=" + encodeURIComponent(setFilter));
+        try {
+            var url = TCGDEX_URL + "/" + lang + "/cards?" + params.join("&");
+            var resp = await fetch(url);
+            if (!resp.ok) return null;
+            var data = await resp.json();
+            if (!Array.isArray(data)) return [];
+            // só cartas que têm imagem
+            return data.filter(function(c) { return c.image; }).slice(0, 120);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ---------- Seções ----------
+    function addSection() {
+        sections.push({ name: "Nova coleção", cards: [] });
+        renderSectionsPanel();
+        renderTargetSelect();
+        renderBanner();
+    }
+
+    function removeSection(i) {
+        sections.splice(i, 1);
+        renderSectionsPanel();
+        renderTargetSelect();
+        renderBanner();
+    }
+
+    function renameSection(i, val) {
+        sections[i].name = val;
+        renderTargetSelect();
+        renderBanner();
+    }
+
+    function addCard(card) {
+        var idx = parseInt(document.getElementById("target-section").value);
+        if (isNaN(idx) || !sections[idx]) { alert("Crie/selecione uma seção primeiro."); return; }
+        sections[idx].cards.push(card);
+        renderSectionsPanel();
+        renderBanner();
+    }
+
+    function removeCard(si, ci) {
+        sections[si].cards.splice(ci, 1);
+        renderSectionsPanel();
+        renderBanner();
+    }
+
+    function cycleVariant(si, ci) {
+        var cur = sections[si].cards[ci].variant;
+        var next = VARIANTS[(VARIANTS.indexOf(cur) + 1) % VARIANTS.length];
+        sections[si].cards[ci].variant = next;
+        renderBanner();
+    }
+
+    // ---------- Render painel ----------
+    function renderTargetSelect() {
+        var sel = document.getElementById("target-section");
+        var prev = sel.value;
+        sel.innerHTML = "";
+        sections.forEach(function(s, i) {
+            var o = document.createElement("option");
+            o.value = i;
+            o.textContent = (i + 1) + ". " + s.name;
+            sel.appendChild(o);
+        });
+        if (prev && sections[prev]) sel.value = prev;
+    }
+
+    function renderSectionsPanel() {
+        var list = document.getElementById("sections-list");
+        list.innerHTML = "";
+        sections.forEach(function(s, i) {
+            var div = document.createElement("div");
+            div.className = "sec-item";
+            div.innerHTML =
+                "<div class='sec-head'>" +
+                    "<input type='text' class='sec-name' value='" + s.name.replace(/'/g, "&#39;") + "' oninput='renameSection(" + i + ", this.value)'>" +
+                    "<button class='btn btn-ghost btn-sm' onclick='removeSection(" + i + ")'>🗑️</button>" +
+                "</div>" +
+                "<div class='sec-count'>" + s.cards.length + " carta(s)</div>";
+            list.appendChild(div);
+        });
+    }
+
+    // ---------- Render banner ----------
+    function renderBanner() {
+        // título com destaque na última palavra dupla
+        var title = document.getElementById("cfg-title").value;
+        document.getElementById("b-title").textContent = title;
+        document.getElementById("b-sub").textContent = document.getElementById("cfg-sub").value;
+
+        var wrap = document.getElementById("b-sections");
+        wrap.innerHTML = "";
+        sections.forEach(function(s, si) {
+            var sec = document.createElement("div");
+            sec.className = "section";
+            var cardsHtml = "";
+            if (s.cards.length === 0) {
+                cardsHtml = "<div class='empty-sec'>Adicione cartas a esta seção</div>";
+            } else {
+                s.cards.forEach(function(c, ci) {
+                    cardsHtml +=
+                        "<div class='b-card'>" +
+                            "<button class='card-remove' onclick='removeCard(" + si + "," + ci + ")'>✕</button>" +
+                            "<img src='" + c.image + "' crossorigin='anonymous'>" +
+                            "<div class='vlabel " + VARIANT_CLASS[c.variant] + "' onclick='cycleVariant(" + si + "," + ci + ")' style='cursor:pointer'>" + VARIANT_SYMBOL[c.variant] + "</div>" +
+                            "<div class='cname'>" + c.name + "</div>" +
+                        "</div>";
+                });
+            }
+            sec.innerHTML =
+                "<div class='section-title'><div class='num'>" + (si + 1) + "</div><div class='txt'>" + s.name + "</div></div>" +
+                "<div class='section-cards'>" + cardsHtml + "</div>";
+            wrap.appendChild(sec);
+        });
+        saveDraft();
+    }
+
+    // ---------- Export ----------
+    async function exportImage() {
+        var banner = document.getElementById("banner");
+        // esconde botões de remover durante a captura
+        banner.querySelectorAll(".card-remove").forEach(function(b){ b.style.display = "none"; });
+        try {
+            var canvas = await html2canvas(banner, {
+                backgroundColor: "#eef2f9",
+                scale: 2,
+                useCORS: true,
+                allowTaint: false,
+                logging: false
+            });
+            var link = document.createElement("a");
+            link.download = "busca-cartas-pokemon.png";
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        } catch (e) {
+            alert("Erro ao gerar imagem. Algumas imagens de cartas podem bloquear a exportação (CORS). Tente novamente ou remova a carta problemática.\n\n" + e.message);
+        }
+    }
+
+    // ---------- Salvar / Carregar modelo ----------
+    var DRAFT_KEY = "busca_banner_draft_v1";
+
+    // Junta todo o estado editável num objeto
+    function collectState() {
+        return {
+            title: document.getElementById("cfg-title").value,
+            sub: document.getElementById("cfg-sub").value,
+            lang: document.getElementById("cfg-lang").value,
+            sections: sections
+        };
+    }
+
+    // Aplica um estado salvo à página
+    function applyState(st) {
+        if (!st) return;
+        if (typeof st.title === "string") document.getElementById("cfg-title").value = st.title;
+        if (typeof st.sub === "string") document.getElementById("cfg-sub").value = st.sub;
+        if (st.lang) document.getElementById("cfg-lang").value = st.lang;
+        if (Array.isArray(st.sections)) sections = st.sections;
+        renderTargetSelect();
+        renderSectionsPanel();
+        renderBanner();
+    }
+
+    // Salva automaticamente no navegador
+    function saveDraft() {
+        try { localStorage.setItem(DRAFT_KEY, JSON.stringify(collectState())); } catch (e) {}
+    }
+
+    // Restaura o rascunho salvo (se existir)
+    function loadDraft() {
+        try {
+            var raw = localStorage.getItem(DRAFT_KEY);
+            if (raw) applyState(JSON.parse(raw));
+        } catch (e) {}
+    }
+
+    // Gera o código compacto do modelo (JSON -> base64, seguro para unicode)
+    function encodeState() {
+        var json = JSON.stringify(collectState());
+        // encodeURIComponent trata acentos; btoa exige latin1
+        return btoa(unescape(encodeURIComponent(json)));
+    }
+
+    // Reconstrói o estado a partir do código
+    function decodeState(code) {
+        var json = decodeURIComponent(escape(atob(code.trim())));
+        return JSON.parse(json);
+    }
+
+    // Copia o código do modelo para a área de transferência
+    function copyCode() {
+        var code = encodeState();
+        // preenche a caixa também, como fallback visual
+        document.getElementById("code-input").value = code;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(code).then(function() {
+                showBannerToast("📋 Código copiado! Guarde-o para restaurar depois.");
+            }, function() {
+                selectCodeBox();
+            });
+        } else {
+            selectCodeBox();
+        }
+    }
+
+    function selectCodeBox() {
+        var box = document.getElementById("code-input");
+        box.focus();
+        box.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        showBannerToast("📋 Código na caixa abaixo — copie manualmente (Ctrl+C).");
+    }
+
+    // Carrega o modelo a partir do código colado
+    function loadCode() {
+        var code = document.getElementById("code-input").value.trim();
+        if (!code) { alert("Cole um código primeiro."); return; }
+        try {
+            applyState(decodeState(code));
+            saveDraft();
+            showBannerToast("✅ Modelo carregado!");
+        } catch (err) {
+            alert("Código inválido. Verifique se copiou o texto completo.");
+        }
+    }
+
+    // Mini toast para feedback
+    function showBannerToast(msg) {
+        var t = document.getElementById("mini-toast");
+        if (!t) {
+            t = document.createElement("div");
+            t.id = "mini-toast";
+            t.style.cssText = "position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#10b981;color:#fff;padding:10px 20px;border-radius:10px;font-weight:700;font-size:13px;z-index:2000;box-shadow:0 4px 12px rgba(0,0,0,0.3);transition:opacity 0.3s;";
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.style.opacity = "1";
+        clearTimeout(t._timer);
+        t._timer = setTimeout(function() { t.style.opacity = "0"; }, 2500);
+    }
+
+    // Limpa tudo e recomeça
+    function clearDraft() {
+        if (!confirm("Apagar o modelo atual e começar do zero?")) return;
+        localStorage.removeItem(DRAFT_KEY);
+        document.getElementById("code-input").value = "";
+        applyState({
+            title: "PROCURO TODAS REVERSE FOIL",
+            sub: "COMPRA OU TROCA — POR CARTAS REVERSE OU FOIL",
+            lang: "pt",
+            sections: [
+                { name: "Megaevolução", cards: [] },
+                { name: "Escuridão Absoluta", cards: [] },
+                { name: "Caos Ascendente", cards: [] }
+            ]
+        });
+        saveDraft();
+    }
+
+    // ---------- Pix (Donate) — modal, cópia e QR ----------
+    var pixQrLibPromise = null; // cache do carregamento da lib de QR (uma vez só)
+
+    // Abre o modal Pix: gera o payload a partir de PIX_CONFIG, preenche a
+    // textarea e exibe o overlay. Tenta renderizar o QR (degrada se falhar).
+    function openPixModal() {
+        var overlay = document.getElementById("pix-modal");
+        var payloadEl = document.getElementById("pix-payload");
+        var qrEl = document.getElementById("pix-qr");
+        var payload = buildPixPayload(PIX_CONFIG);
+        if (payloadEl) payloadEl.value = payload;
+        if (overlay) overlay.classList.add("open");
+        if (qrEl) renderPixQr(payload, qrEl);
+    }
+
+    // Fecha o modal Pix (remove a classe "open").
+    function closePixModal() {
+        var overlay = document.getElementById("pix-modal");
+        if (overlay) overlay.classList.remove("open");
+    }
+
+    // Copia o payload Pix para a área de transferência, com fallback via
+    // execCommand, e dá feedback visual através do showBannerToast.
+    function copyPixPayload() {
+        var payloadEl = document.getElementById("pix-payload");
+        if (!payloadEl) return;
+        var payload = payloadEl.value || buildPixPayload(PIX_CONFIG);
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(payload).then(function() {
+                showBannerToast("📋 Código Pix copiado! Cole no app do seu banco.");
+            }, function() {
+                selectPixBox();
+            });
+        } else {
+            selectPixBox();
+        }
+    }
+
+    // Fallback de cópia: seleciona a textarea e usa execCommand("copy").
+    function selectPixBox() {
+        var box = document.getElementById("pix-payload");
+        if (!box) return;
+        box.focus();
+        box.select();
+        try { document.execCommand("copy"); } catch (e) {}
+        showBannerToast("📋 Código Pix selecionado — copie manualmente (Ctrl+C).");
+    }
+
+    // Carrega a lib de QR via CDN sob demanda (uma única vez).
+    // Retorna uma Promise que resolve quando o global QRCode estiver disponível.
+    function loadPixQrLib() {
+        if (typeof QRCode !== "undefined") return Promise.resolve();
+        if (pixQrLibPromise) return pixQrLibPromise;
+        pixQrLibPromise = new Promise(function(resolve, reject) {
+            var s = document.createElement("script");
+            s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
+            s.async = true;
+            s.onload = function() { resolve(); };
+            s.onerror = function() {
+                pixQrLibPromise = null; // permite nova tentativa depois
+                reject(new Error("Falha ao carregar a lib de QR Code."));
+            };
+            document.head.appendChild(s);
+        });
+        return pixQrLibPromise;
+    }
+
+    // Renderiza um QR Code do payload no contêiner informado, carregando a lib
+    // de QR via CDN sob demanda. Se a lib estiver ausente/offline, degrada
+    // graciosamente: limpa o contêiner e mantém apenas o Pix Copia e Cola.
+    function renderPixQr(payload, containerEl) {
+        if (!containerEl) return;
+        containerEl.innerHTML = ""; // limpa render anterior
+        loadPixQrLib().then(function() {
+            try {
+                containerEl.innerHTML = "";
+                new QRCode(containerEl, {
+                    text: payload,
+                    width: 180,
+                    height: 180,
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            } catch (e) {
+                containerEl.innerHTML = ""; // degradação graciosa
+            }
+        }).catch(function() {
+            // Lib ausente/offline: mostra só o Copia e Cola (sem QR).
+            containerEl.innerHTML = "";
+        });
+    }
+
+    // Wiring do modal Pix: botão copiar, botão fechar e clique no overlay.
+    (function wirePixModal() {
+        var copyBtn = document.getElementById("pix-copy");
+        if (copyBtn) copyBtn.addEventListener("click", copyPixPayload);
+        var closeBtn = document.getElementById("pix-close");
+        if (closeBtn) closeBtn.addEventListener("click", closePixModal);
+        var overlay = document.getElementById("pix-modal");
+        if (overlay) {
+            // fecha ao clicar no fundo (fora do card), mas não ao clicar no card
+            overlay.addEventListener("click", function(e) {
+                if (e.target === overlay) closePixModal();
+            });
+        }
+    })();
+
+    // Alterna label/placeholder conforme o modo de busca
+    document.getElementById("search-mode").addEventListener("change", function() {
+        var byIll = this.value === "illustrator";
+        document.getElementById("search-label").textContent = byIll ? "Nome do ilustrador" : "Nome do Pokémon / carta";
+        document.getElementById("search-input").placeholder = byIll ? "Ex: Mitsuhiro Arita, Ken Sugimori..." : "Ex: Charizard, Cinderace...";
+    });
+
+    // Init
+    renderTargetSelect();
+    renderSectionsPanel();
+    renderBanner();
+    loadDraft();
+    </script>
+</body>
+</html>
