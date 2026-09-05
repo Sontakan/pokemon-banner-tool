@@ -54,7 +54,11 @@
         .hint { font-size: 11px; color: #64748b; margin-top: 6px; line-height: 1.5; }
 
         /* ===== BANNER (área exportada) ===== */
-        .banner-wrap { overflow-x: auto; }
+        /* O #banner tem largura fixa de 1024px (tamanho real da imagem exportada).
+           Para o preview caber na tela, escalamos visualmente via transform em
+           #banner-scale, sem alterar o tamanho real usado pelo html2canvas. */
+        .banner-wrap { overflow: hidden; }
+        #banner-scale { transform-origin: top left; }
         #banner { width: 1024px; background: #eef2f9; border-radius: 0; position: relative; padding: 0 0 24px; color: #1e293b; }
         .banner-top { background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #2563eb 100%); padding: 18px 30px; text-align: center; position: relative; overflow: hidden; }
         .banner-top .brandpill { position: absolute; top: 14px; font-size: 11px; background: rgba(0,0,0,0.35); padding: 4px 10px; border-radius: 20px; font-weight: 700; letter-spacing: 1px; }
@@ -187,6 +191,7 @@
 
         <!-- ===== PREVIEW DO BANNER ===== -->
         <div class="banner-wrap">
+          <div id="banner-scale">
             <div id="banner">
                 <div class="banner-top">
                     <span class="brandpill left">POKÉMON</span>
@@ -202,6 +207,7 @@
                     <div class="fitem"><span class="ic" style="background:#10b981">🤝</span> Todas as coleções</div>
                 </div>
             </div>
+          </div>
         </div>
     </div>
 
@@ -527,7 +533,7 @@
                     cardsHtml +=
                         "<div class='b-card'>" +
                             "<button class='card-remove' onclick='removeCard(" + si + "," + ci + ")'>✕</button>" +
-                            "<img src='" + c.image + "' crossorigin='anonymous'>" +
+                            "<img src='" + c.image + "' crossorigin='anonymous' onload='if(typeof fitBannerPreview===\"function\")fitBannerPreview()'>" +
                             "<div class='vlabel " + VARIANT_CLASS[c.variant] + "' onclick='cycleVariant(" + si + "," + ci + ")' style='cursor:pointer'>" + VARIANT_SYMBOL[c.variant] + "</div>" +
                             "<div class='cname'>" + c.name + "</div>" +
                         "</div>";
@@ -539,11 +545,35 @@
             wrap.appendChild(sec);
         });
         saveDraft();
+        // reescala o preview após atualizar o conteúdo (altura pode ter mudado)
+        if (typeof fitBannerPreview === "function") fitBannerPreview();
     }
 
     // ---------- Export ----------
+    // Escala o preview do banner (1024px fixo) para caber na largura disponível,
+    // sem alterar o tamanho real do #banner usado na exportação (html2canvas).
+    var BANNER_WIDTH = 1024;
+    function fitBannerPreview() {
+        var wrap = document.querySelector(".banner-wrap");
+        var scaleEl = document.getElementById("banner-scale");
+        var banner = document.getElementById("banner");
+        if (!wrap || !scaleEl || !banner) return;
+        var avail = wrap.clientWidth;
+        var scale = avail < BANNER_WIDTH ? (avail / BANNER_WIDTH) : 1;
+        scaleEl.style.transform = "scale(" + scale + ")";
+        // transform não ocupa espaço no fluxo; ajusta a altura do wrapper de escala
+        // para o container refletir a altura escalada (evita sobreposição).
+        scaleEl.style.height = (banner.offsetHeight * scale) + "px";
+    }
+    window.addEventListener("resize", fitBannerPreview);
+
     async function exportImage() {
         var banner = document.getElementById("banner");
+        var scaleEl = document.getElementById("banner-scale");
+        // remove a escala do preview para capturar o banner em tamanho real (1024px)
+        var prevTransform = scaleEl ? scaleEl.style.transform : "";
+        var prevHeight = scaleEl ? scaleEl.style.height : "";
+        if (scaleEl) { scaleEl.style.transform = "none"; scaleEl.style.height = "auto"; }
         // esconde botões de remover durante a captura
         banner.querySelectorAll(".card-remove").forEach(function(b){ b.style.display = "none"; });
         try {
@@ -560,6 +590,11 @@
             link.click();
         } catch (e) {
             alert("Erro ao gerar imagem. Algumas imagens de cartas podem bloquear a exportação (CORS). Tente novamente ou remova a carta problemática.\n\n" + e.message);
+        } finally {
+            // restaura a escala do preview e remove o override inline dos botões
+            if (scaleEl) { scaleEl.style.transform = prevTransform; scaleEl.style.height = prevHeight; }
+            banner.querySelectorAll(".card-remove").forEach(function(b){ b.style.display = ""; });
+            fitBannerPreview();
         }
     }
 
@@ -802,6 +837,9 @@
     renderSectionsPanel();
     renderBanner();
     loadDraft();
+    fitBannerPreview();
+    // Reescala novamente quando as imagens das cartas carregarem (a altura muda).
+    window.addEventListener("load", fitBannerPreview);
     </script>
 </body>
 </html>
