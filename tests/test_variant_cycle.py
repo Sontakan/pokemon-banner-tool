@@ -25,11 +25,9 @@ from hypothesis import strategies as st
 from sections_ref import VARIANTS, cycle_variant
 
 
-# Expected one-step transition, matching the design's order normal -> reverse -> foil (-> normal).
+# Expected one-step transition: the next variant in VARIANTS, wrapping around.
 NEXT_VARIANT = {
-    "normal": "reverse",
-    "reverse": "foil",
-    "foil": "normal",
+    v: VARIANTS[(i + 1) % len(VARIANTS)] for i, v in enumerate(VARIANTS)
 }
 
 
@@ -53,11 +51,11 @@ def _make_sections(variant: str) -> List[Dict[str, Any]]:
 
 @settings(max_examples=100)
 @given(initial=st.sampled_from(VARIANTS))
-def test_variant_cycle_is_cyclic_period_3(initial: str):
-    """Feature: pokemon-banner-tool, Property 6: Ciclo de variante é cíclico de período 3
+def test_variant_cycle_is_cyclic(initial: str):
+    """Feature: pokemon-banner-tool, Property 6: Ciclo de variante é cíclico
 
-    One step advances normal -> reverse -> foil; three steps return to the
-    initial variant.
+    One step advances to the next variant in VARIANTS; len(VARIANTS) steps
+    return to the initial variant.
     """
     secs = _make_sections(initial)
 
@@ -65,7 +63,7 @@ def test_variant_cycle_is_cyclic_period_3(initial: str):
     cycle_variant(secs, 0, 0)
     assert secs[0]["cards"][0]["variant"] == NEXT_VARIANT[initial]
 
-    # Two more applications (three total) return to the initial variant.
-    cycle_variant(secs, 0, 0)
-    cycle_variant(secs, 0, 0)
+    # Completing a full cycle returns to the initial variant.
+    for _ in range(len(VARIANTS) - 1):
+        cycle_variant(secs, 0, 0)
     assert secs[0]["cards"][0]["variant"] == initial

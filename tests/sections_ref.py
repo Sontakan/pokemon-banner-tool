@@ -52,9 +52,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-# Matches `var VARIANTS = ["normal", "reverse", "foil"];` in index.html.
-# Variant cycle order: normal -> reverse -> foil (-> normal).
-VARIANTS: List[str] = ["normal", "reverse", "foil"]
+# Matches `var VARIANTS` in index.html.
+# Variant cycle order: normal -> reverse -> foil -> exreg -> illust -> ultra -> hyper (-> normal).
+VARIANTS: List[str] = ["normal", "reverse", "foil", "exreg", "illust", "ultra", "hyper"]
 
 # Default new-section name used by the JS `addSection` (sections.push({ name: "Nova coleção", cards: [] })).
 NEW_SECTION_NAME = "Nova coleção"
