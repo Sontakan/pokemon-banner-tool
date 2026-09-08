@@ -45,7 +45,7 @@ from typing import Any, Dict, List
 from hypothesis import strategies as st
 
 # The variants a card can be tagged with, matching VARIANTS in the JS.
-VARIANTS: List[str] = ["normal", "reverse", "foil", "exreg", "illust", "ultra", "hyper"]
+VARIANTS: List[str] = ["normal", "reverse", "illust", "altart", "gold", "exreg", "sar"]
 
 
 # ---------------------------------------------------------------------------

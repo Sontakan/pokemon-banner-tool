@@ -76,7 +76,7 @@ def test_decode_state_strips_whitespace():
 
 def test_round_trip_all_variants():
     """Every variant value is preserved across the round-trip."""
-    for variant in ("normal", "reverse", "foil"):
+    for variant in ("normal", "reverse", "illust", "altart", "gold", "exreg", "sar"):
         state = {
             "title": "t",
             "sub": "s",

@@ -54,7 +54,7 @@ from typing import Any, Dict, List
 
 # Matches `var VARIANTS` in index.html.
 # Variant cycle order: normal -> reverse -> foil -> exreg -> illust -> ultra -> hyper (-> normal).
-VARIANTS: List[str] = ["normal", "reverse", "foil", "exreg", "illust", "ultra", "hyper"]
+VARIANTS: List[str] = ["normal", "reverse", "illust", "altart", "gold", "exreg", "sar"]
 
 # Default new-section name used by the JS `addSection` (sections.push({ name: "Nova coleção", cards: [] })).
 NEW_SECTION_NAME = "Nova coleção"

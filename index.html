@@ -78,11 +78,11 @@
         .b-card .vlabel { position: absolute; bottom: 6px; right: 6px; width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; box-shadow: 0 2px 6px rgba(0,0,0,0.5); }
         .v-normal { background: #e5e7eb; color: #374151; }
         .v-reverse { background: #22d3ee; color: #083344; }
-        .v-foil { background: #fbbf24; color: #111; }
-        .v-exreg { background: #e5e7eb; color: #111; font-size: 10px; letter-spacing: -1px; }
-        .v-illust { background: #fbbf24; color: #111; }
-        .v-ultra { background: linear-gradient(135deg,#e2e8f0,#94a3b8); color: #1e293b; font-size: 10px; letter-spacing: -1px; }
-        .v-hyper { background: linear-gradient(135deg,#fde047,#f59e0b); color: #7c2d12; font-size: 9px; letter-spacing: -1px; }
+        .v-illust { background: #fef08a; color: #a16207; }
+        .v-altart { background: #f1f5f9; color: #64748b; font-size: 10px; letter-spacing: -1px; }
+        .v-gold { background: linear-gradient(135deg,#fde047,#f59e0b); color: #7c2d12; font-size: 9px; letter-spacing: -1px; }
+        .v-exreg { background: #1e293b; color: #f8fafc; font-size: 10px; letter-spacing: -1px; }
+        .v-sar { background: linear-gradient(135deg,#fde047,#f59e0b); color: #7c2d12; font-size: 10px; letter-spacing: -1px; }
         .b-card .cname { text-align: center; font-size: 12px; font-weight: 700; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #334155; }
 
         .banner-footer { display: flex; justify-content: center; gap: 34px; margin: 22px 22px 0; padding-top: 16px; border-top: 1px solid rgba(30,58,95,0.15); font-size: 13px; font-weight: 700; color: #475569; }
@@ -207,10 +207,11 @@
                 <div class="banner-footer">
                     <div class="fitem"><span class="ic" style="background:#e5e7eb;color:#374151">⚪</span> Normal</div>
                     <div class="fitem"><span class="ic" style="background:#22d3ee;color:#083344">◇</span> Reverse Foil</div>
-                    <div class="fitem"><span class="ic" style="background:#e5e7eb;color:#111;font-size:10px;letter-spacing:-1px">✦✦</span> EX Regular</div>
-                    <div class="fitem"><span class="ic" style="background:#fbbf24;color:#111">⭐</span> Ilustração Rara</div>
-                    <div class="fitem"><span class="ic" style="background:linear-gradient(135deg,#e2e8f0,#94a3b8);color:#1e293b;font-size:10px;letter-spacing:-1px">✦✦</span> Rara Dupla / Arte Alternativa</div>
-                    <div class="fitem"><span class="ic" style="background:linear-gradient(135deg,#fde047,#f59e0b);color:#7c2d12;font-size:9px;letter-spacing:-1px">✦✦✦</span> Hyper Rara / Dourada</div>
+                    <div class="fitem"><span class="ic" style="background:#fef08a;color:#a16207">⭐</span> Ilustração Rara</div>
+                    <div class="fitem"><span class="ic" style="background:#f1f5f9;color:#64748b;font-size:10px;letter-spacing:-1px">✦✦</span> Arte Alternativa</div>
+                    <div class="fitem"><span class="ic" style="background:linear-gradient(135deg,#fde047,#f59e0b);color:#7c2d12;font-size:9px;letter-spacing:-1px">✦✦✦</span> Dourada</div>
+                    <div class="fitem"><span class="ic" style="background:#1e293b;color:#f8fafc;font-size:10px;letter-spacing:-1px">✦✦</span> EX Regular</div>
+                    <div class="fitem"><span class="ic" style="background:linear-gradient(135deg,#fde047,#f59e0b);color:#7c2d12;font-size:10px;letter-spacing:-1px">✦✦</span> SAR</div>
                     <div class="fitem"><span class="ic" style="background:#10b981">🤝</span> Todas as coleções</div>
                 </div>
             </div>
@@ -311,9 +312,9 @@
         { name: "Caos Ascendente", cards: [] }
     ];
     // variante: "normal" | "reverse" | "foil"
-    var VARIANTS = ["normal", "reverse", "foil", "exreg", "illust", "ultra", "hyper"];
-    var VARIANT_SYMBOL = { normal: "⚪", reverse: "◇", foil: "⭐", exreg: "✦✦", illust: "⭐", ultra: "✦✦", hyper: "✦✦✦" };
-    var VARIANT_CLASS = { normal: "v-normal", reverse: "v-reverse", foil: "v-foil", exreg: "v-exreg", illust: "v-illust", ultra: "v-ultra", hyper: "v-hyper" };
+    var VARIANTS = ["normal", "reverse", "illust", "altart", "gold", "exreg", "sar"];
+    var VARIANT_SYMBOL = { normal: "⚪", reverse: "◇", illust: "⭐", altart: "✦✦", gold: "✦✦✦", exreg: "✦✦", sar: "✦✦" };
+    var VARIANT_CLASS = { normal: "v-normal", reverse: "v-reverse", illust: "v-illust", altart: "v-altart", gold: "v-gold", exreg: "v-exreg", sar: "v-sar" };
 
     // ---------- Busca (API TCGdex) ----------
     // Monta a URL final da imagem: base + qualidade + extensão
