@@ -533,7 +533,7 @@
                     cardsHtml +=
                         "<div class='b-card'>" +
                             "<button class='card-remove' onclick='removeCard(" + si + "," + ci + ")'>✕</button>" +
-                            "<img src='" + c.image + "' crossorigin='anonymous' onload='if(typeof fitBannerPreview===\"function\")fitBannerPreview()'>" +
+                            "<img src='" + c.image + "' referrerpolicy='no-referrer' onload='if(typeof fitBannerPreview===\"function\")fitBannerPreview()' onerror=\"this.style.opacity=&#39;0.25&#39;\">" +
                             "<div class='vlabel " + VARIANT_CLASS[c.variant] + "' onclick='cycleVariant(" + si + "," + ci + ")' style='cursor:pointer'>" + VARIANT_SYMBOL[c.variant] + "</div>" +
                             "<div class='cname'>" + c.name + "</div>" +
                         "</div>";
@@ -567,6 +567,25 @@
     }
     window.addEventListener("resize", fitBannerPreview);
 
+    // Baixa uma imagem contornando o header CORS quebrado do servidor de origem
+    // (assets.tcgdex.net responde "Access-Control-Allow-Origin: *, *", que o
+    // navegador rejeita). Tenta fetch direto (no-cors não serve p/ canvas), e
+    // em caso de falha usa um proxy de imagem que reescreve os headers CORS.
+    function toDataUrl(url) {
+        // Proxy que devolve a imagem com CORS correto (weserv). Sem protocolo na query.
+        var proxied = "https://images.weserv.nl/?url=" + encodeURIComponent(url.replace(/^https?:\/\//, ""));
+        return fetch(proxied, { mode: "cors", cache: "no-cache" })
+            .then(function(r) { if (!r.ok) throw new Error("proxy " + r.status); return r.blob(); })
+            .then(function(blob) {
+                return new Promise(function(resolve, reject) {
+                    var fr = new FileReader();
+                    fr.onload = function() { resolve(fr.result); };
+                    fr.onerror = reject;
+                    fr.readAsDataURL(blob);
+                });
+            });
+    }
+
     async function exportImage() {
         var banner = document.getElementById("banner");
         var scaleEl = document.getElementById("banner-scale");
@@ -576,6 +595,25 @@
         if (scaleEl) { scaleEl.style.transform = "none"; scaleEl.style.height = "auto"; }
         // esconde botões de remover durante a captura
         banner.querySelectorAll(".card-remove").forEach(function(b){ b.style.display = "none"; });
+
+        // Converte cada imagem de carta para data URL (embutida) antes de capturar,
+        // para o html2canvas não precisar de CORS na hora de "tingir" o canvas.
+        var imgs = Array.prototype.slice.call(banner.querySelectorAll(".b-card img"));
+        var originals = imgs.map(function(img) { return img.getAttribute("src"); });
+        showBannerToast("🖼️ Preparando imagens para exportar...");
+        await Promise.all(imgs.map(function(img, i) {
+            var src = originals[i];
+            if (!src || src.indexOf("data:") === 0) return Promise.resolve();
+            return toDataUrl(src)
+                .then(function(dataUrl) {
+                    return new Promise(function(resolve) {
+                        img.onload = resolve; img.onerror = resolve; // segue mesmo se falhar
+                        img.src = dataUrl;
+                    });
+                })
+                .catch(function() { /* mantém o src original se o proxy falhar */ });
+        }));
+
         try {
             var canvas = await html2canvas(banner, {
                 backgroundColor: "#eef2f9",
@@ -591,6 +629,8 @@
         } catch (e) {
             alert("Erro ao gerar imagem. Algumas imagens de cartas podem bloquear a exportação (CORS). Tente novamente ou remova a carta problemática.\n\n" + e.message);
         } finally {
+            // restaura os src originais das imagens
+            imgs.forEach(function(img, i) { if (originals[i]) img.src = originals[i]; });
             // restaura a escala do preview e remove o override inline dos botões
             if (scaleEl) { scaleEl.style.transform = prevTransform; scaleEl.style.height = prevHeight; }
             banner.querySelectorAll(".card-remove").forEach(function(b){ b.style.display = ""; });
